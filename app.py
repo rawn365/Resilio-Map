@@ -514,6 +514,12 @@ with st.sidebar:
     # Branding block at top
     st.markdown("""
     <div class="sb-brand-wrap">
+      <div class="sb-logomark">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" opacity="0.3"/>
+          <path d="M17 8C15.9 6.76 14.05 6 12 6S8.1 6.76 7 8c-.65.77-1 1.84-1 3 0 3.31 2.69 6 6 6s6-2.69 6-6c0-1.16-.35-2.23-1-3z"/>
+        </svg>
+      </div>
       <div class="sb-title">Resilio<span style="color:#1e6b3c">-Map</span></div>
       <div class="sb-tagline">Climate Refugia<br>Luzon · Philippines</div>
     </div>""", unsafe_allow_html=True)
