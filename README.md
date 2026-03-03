@@ -1,5 +1,4 @@
-# Resilio-Map
-resilio map codebase
+# Resilio-Map Installation Guide 
 
 steps para i - run
 
