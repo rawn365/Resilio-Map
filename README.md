@@ -20,6 +20,6 @@ after mag install
 type sa same command line -> streamlit run app.py tas bubukas na yan
 
 
-*Additional*
+*Additional*</br>
 btw yung mga species dito hardcoded kaya wala pang option mag insert ng csv he yung climate same din 
 may bug yung side bar kaya wag nyo pipindutin yung button sa taas ng Resilio-Map na text pang sarado ng sidebar yun pag pinindot nyo di nyo na makikita yung button ulit mastuck kayo, ginawa kong fixed yung sidebar kala ko maakakatulong, di pala goddamit
