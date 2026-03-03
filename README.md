@@ -5,6 +5,8 @@ steps para i - run
 
 i download yung yung 2 folder
 
+tas punta kayo sa users folder nyo i paste nyo dun yung 2 folder 
+
 tas open mo terminal/cmd
 
 kung nasa users ka -> cd resilio-map 
