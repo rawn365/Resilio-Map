@@ -17,7 +17,7 @@ tas kung di nakainstall streamlit type -> pip install -r requirements.txt (iinst
 
 after mag install
 
-type sa same command line -> streamlit run app.py tas bubukas na yan
+type sa same command line -> streamlit run app.py tas bubukas na yan</br> </br>
 
 
 *Additional*</br>
