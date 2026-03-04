@@ -2,11 +2,11 @@
 
 steps para i - run
 
-i download yung yung 3 files 
+i download yung yung 4 files 
 
 tas punta kayo sa users folder nyo then gawa kayo dalawang folder named '.streamlit' at 'resilio-map' EXACTLY AH
 
-i move nyo yung 'credentials.toml' sa '.streamlit' na folder
+i move nyo yung 'credentials.toml' at 'config.toml' sa '.streamlit' na folder
 i move nyo yung 'app.py' at 'requirements.txt' sa 'resilio-map' na folder 
 
 tas open mo terminal/cmd
