@@ -13,7 +13,6 @@ import plotly.graph_objects as go
 import time
 import io
 
-# ── PAGE CONFIG ───────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="Resilio-Map",
     page_icon="🌿",
@@ -21,117 +20,180 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── CSS ───────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,700;0,9..144,900;1,9..144,400&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
 
-html, body, [class*="css"], [class*="st-"] { font-family: 'DM Sans', sans-serif !important; }
+/* ── FORCE LIGHT MODE everywhere — fixes white text on dark OS themes ── */
+html, body {
+    color-scheme: light !important;
+    background-color: #f7f9f7 !important;
+}
+*, *::before, *::after { color-scheme: light !important; }
+
+html, body, [class*="css"], [class*="st-"] {
+    font-family: 'DM Sans', sans-serif !important;
+}
 
 .stApp, .stApp > div,
 [data-testid="stAppViewContainer"],
-[data-testid="stAppViewBlockContainer"] { background-color: #f7f9f7 !important; }
+[data-testid="stAppViewBlockContainer"] {
+    background-color: #f7f9f7 !important;
+}
 
-/* ── Hide chrome, keep sidebar toggle ── */
-#MainMenu { visibility: hidden; }
-footer    { visibility: hidden; }
-header    { background: transparent !important; }
-header [data-testid="stToolbar"]      { visibility: hidden; }
-header [data-testid="stDecoration"]   { display: none; }
-header [data-testid="stStatusWidget"] { visibility: hidden; }
+/* ── Hide chrome — only specific children, never the toolbar wrapper ── */
+#MainMenu { visibility: hidden !important; }
+footer    { visibility: hidden !important; }
+[data-testid="stDecoration"]   { display: none !important; }
+[data-testid="stStatusWidget"] { visibility: hidden !important; }
 
-/* Hide ONLY the text inside the collapse button, keep the icon */
-[data-testid="stSidebarCollapseButton"] span:not([data-testid="stIconMaterial"]) { display: none !important; }
-[data-testid="stSidebarCollapseButton"] [data-testid="stIconMaterial"] { display: inline !important; }
+/* Hide ONLY the deploy button and top-right menu inside the toolbar */
+[data-testid="stToolbarActions"] { visibility: hidden !important; }
+[data-testid="stMainMenuPopover"] { display: none !important; }
+
+/* ── Sidebar toggle — both open and collapsed states, always on top ── */
 [data-testid="stSidebarCollapseButton"] {
-    visibility: visible !important; opacity: 1 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
     pointer-events: auto !important;
+    display: flex !important;
+    position: relative !important;
+    z-index: 99999 !important;
+}
+[data-testid="stSidebarCollapsedControl"] {
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    display: flex !important;
+    position: fixed !important;
+    top: 14px !important;
+    left: 14px !important;
+    z-index: 99999 !important;
+}
+[data-testid="stSidebarCollapsedControl"] button {
+    visibility: visible !important;
+    display: flex !important;
     background: #ffffff !important;
     border: 1px solid #e3ebe4 !important;
     border-radius: 8px !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12) !important;
+    padding: 6px !important;
+}
+
+/* ── Sidebar ── */
+[data-testid="stSidebar"] {
+    background-color: #ffffff !important;
+    border-right: 1px solid #e3ebe4 !important;
+}
+[data-testid="stSidebar"] > div:first-child {
+    background-color: #ffffff !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
 }
 
 .block-container { padding: 2rem 2.5rem 3rem; max-width: 1200px; }
 
-/* ── SIDEBAR — fixed, no scroll, white ── */
-[data-testid="stSidebar"] {
-    background-color: #ffffff !important;
-    border-right: 1px solid #e3ebe4 !important;
-    width: 260px !important;
-    min-width: 260px !important;
-    max-width: 260px !important;
-}
-[data-testid="stSidebar"] > div:first-child {
-    background-color: #ffffff !important;
-    overflow: hidden !important;
-    height: 100vh !important;
-    padding: 0 !important;
-}
-/* Kill the inner scrollable container */
-[data-testid="stSidebarContent"] {
-    overflow: hidden !important;
-    height: 100% !important;
-    padding: 0 !important;
-}
-
-/* ── NAV BUTTONS — no numbers, clean ── */
-[data-testid="baseButton-primary"], button[kind="primary"],
-.stButton > button[kind="primary"] {
-    background-color: #1e6b3c !important; color: #ffffff !important;
+/* ── Buttons ── */
+[data-testid="baseButton-primary"], .stButton > button[kind="primary"] {
+    background-color: #1e6b3c !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
     border: none !important; border-radius: 8px !important;
     font-family: 'DM Sans', sans-serif !important; font-weight: 600 !important;
-    font-size: 13px !important;
-    box-shadow: 0 2px 8px rgba(30,107,60,0.2) !important;
+    font-size: 13px !important; box-shadow: 0 2px 8px rgba(30,107,60,0.2) !important;
 }
 [data-testid="baseButton-primary"]:hover { background-color: #2d8a50 !important; }
-
-[data-testid="baseButton-secondary"], button[kind="secondary"],
-.stButton > button[kind="secondary"], .stButton > button {
-    background-color: #ffffff !important; color: #4a5e4c !important;
+[data-testid="baseButton-secondary"], .stButton > button[kind="secondary"], .stButton > button {
+    background-color: #ffffff !important;
+    color: #4a5e4c !important;
+    -webkit-text-fill-color: #4a5e4c !important;
     border: 1px solid #e3ebe4 !important; border-radius: 8px !important;
     font-family: 'DM Sans', sans-serif !important; font-weight: 500 !important;
     font-size: 13px !important; box-shadow: none !important;
 }
 .stButton > button:hover {
     background-color: #eaf4ed !important; border-color: #a8ccb2 !important;
+    color: #141f16 !important; -webkit-text-fill-color: #141f16 !important;
+}
+
+/* ── ALL INPUTS: force light bg + dark text — fixes dark mode machines ── */
+input, textarea, select,
+[data-testid="stTextInput"] input,
+[data-testid="stTextInput"] textarea,
+[data-testid="stNumberInput"] input,
+[data-testid="stSelectbox"] input,
+[data-testid="stMultiSelect"] input {
+    background-color: #ffffff !important;
+    color: #141f16 !important;
+    border: 1px solid #c8d8ca !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+    font-family: 'DM Sans', sans-serif !important;
+    -webkit-text-fill-color: #141f16 !important;
+}
+input::placeholder, textarea::placeholder {
+    color: #8fa893 !important;
+    -webkit-text-fill-color: #8fa893 !important;
+    opacity: 1 !important;
+}
+
+/* ── Selectbox: container + dropdown list ── */
+[data-testid="stSelectbox"] > div > div {
+    background-color: #ffffff !important;
+    color: #141f16 !important;
+    border: 1px solid #c8d8ca !important;
+    border-radius: 8px !important;
+}
+/* The selected text inside the selectbox */
+[data-testid="stSelectbox"] span,
+[data-testid="stSelectbox"] p,
+[data-testid="stSelectbox"] div {
     color: #141f16 !important;
 }
+/* Dropdown option list items */
+[role="listbox"] li,
+[role="option"],
+ul[role="listbox"] li,
+div[role="option"] {
+    background-color: #ffffff !important;
+    color: #141f16 !important;
+}
+[role="option"]:hover, [role="option"][aria-selected="true"] {
+    background-color: #eaf4ed !important;
+    color: #1e6b3c !important;
+}
 
-/* ── FORM CONTROLS ── */
-[data-testid="stSelectbox"] > div > div {
-    background-color: #ffffff !important; border: 1px solid #c8d8ca !important; border-radius: 8px !important;
+/* ── Radio + checkbox labels ── */
+[data-testid="stRadio"] label,
+[data-testid="stRadio"] span,
+[data-testid="stCheckbox"] label,
+[data-testid="stCheckbox"] span {
+    color: #141f16 !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 13px !important;
 }
-[data-testid="stRadio"] label, [data-testid="stCheckbox"] label {
-    font-family: 'DM Sans', sans-serif !important; font-size: 13px !important; color: #4a5e4c !important;
-}
+
+/* ── Dataframe ── */
 [data-testid="stProgress"] > div > div { background-color: #1e6b3c !important; }
-[data-testid="stDataFrame"] { border: 1px solid #e3ebe4 !important; border-radius: 10px !important; overflow: hidden !important; }
+[data-testid="stDataFrame"] {
+    border: 1px solid #e3ebe4 !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
+}
+[data-testid="stDataFrame"] { color: #141f16; }
 
-/* ── PAGE TYPOGRAPHY ── */
-.page-title {
-    font-family: 'Fraunces', Georgia, serif; font-size: 28px; font-weight: 900;
-    color: #141f16; letter-spacing: -0.03em; line-height: 1.15; margin-bottom: 4px;
-}
-.page-eyebrow {
-    font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.16em;
-    text-transform: uppercase; color: #2d8a50; margin-bottom: 8px;
-}
+/* ── Page typography ── */
+.page-title { font-family: 'Fraunces', Georgia, serif; font-size: 28px; font-weight: 900; color: #141f16; letter-spacing: -0.03em; line-height: 1.15; margin-bottom: 4px; }
+.page-eyebrow { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #2d8a50; margin-bottom: 8px; }
 .page-sub { font-size: 13px; color: #4a5e4c; line-height: 1.7; margin-bottom: 20px; }
 
-/* ── STAT CARDS ── */
-.stat-val {
-    font-family: 'Fraunces', Georgia, serif; font-size: 32px; font-weight: 900;
-    letter-spacing: -0.02em; line-height: 1; margin-bottom: 4px;
-}
-.stat-green { color: #1e6b3c; } .stat-red { color: #8b2e1e; }
+/* ── Stat cards ── */
+.stat-val { font-family: 'Fraunces', Georgia, serif; font-size: 32px; font-weight: 900; letter-spacing: -0.02em; line-height: 1; margin-bottom: 4px; color: #141f16; }
+.stat-green { color: #1e6b3c !important; } .stat-red { color: #8b2e1e !important; }
 .stat-label { font-family: 'DM Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #8fa893; }
 
-/* ── STEP BAR ── */
-.step-bar {
-    display: flex; border: 1px solid #e3ebe4; border-radius: 10px;
-    overflow: hidden; background: #ffffff; margin-bottom: 24px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-}
+/* ── Step bar ── */
+.step-bar { display: flex; border: 1px solid #e3ebe4; border-radius: 10px; overflow: hidden; background: #ffffff; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
 .step-item { flex: 1; padding: 11px 14px; border-right: 1px solid #e3ebe4; }
 .step-item:last-child { border-right: none; }
 .step-item.active { background: #eaf4ed; border-bottom: 2px solid #1e6b3c; }
@@ -143,10 +205,11 @@ header [data-testid="stStatusWidget"] { visibility: hidden; }
 .step-item.active .s-name { color: #1e6b3c; }
 .step-item.done   .s-name { color: #4a5e4c; }
 
-/* ── ALGO + STABILITY CARDS ── */
+/* ── Algo cards ── */
 .algo-name { font-family: 'Fraunces', Georgia, serif; font-size: 20px; font-weight: 900; letter-spacing: -0.02em; color: #141f16; margin-bottom: 2px; }
 .algo-role { font-family: 'DM Mono', monospace; font-size: 10px; color: #8fa893; margin-bottom: 14px; line-height: 1.5; }
 
+/* ── Stability cards ── */
 .stab-r { background:#eaf4ed; border:1px solid #d4eada; border-radius:8px; padding:13px; }
 .stab-g { background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:13px; }
 .stab-m { background:#f7f9f7; border:1px solid #e3ebe4; border-radius:8px; padding:13px; }
@@ -156,53 +219,30 @@ header [data-testid="stStatusWidget"] { visibility: hidden; }
 .stab-m .stab-val { color:#8fa893; } .stab-l .stab-val { color:#dc2626; }
 .stab-lbl { font-family:'DM Mono',monospace; font-size:9px; color:#8fa893; text-transform:uppercase; letter-spacing:.08em; }
 
-/* ── CALLOUTS ── */
+/* ── Callouts ── */
 .callout-green { padding:11px 14px; background:#eaf4ed; border-left:3px solid #1e6b3c; border-radius:0 7px 7px 0; font-size:12px; color:#4a5e4c; line-height:1.6; margin-top:12px; }
 .callout-amber { padding:11px 14px; background:#fef3e2; border-left:3px solid #c8922a; border-radius:0 7px 7px 0; font-size:12px; color:#4a5e4c; line-height:1.6; margin-top:12px; }
 
-/* ── SIDEBAR BRANDING ── */
-.sb-brand-wrap {
-    padding: 28px 20px 20px;
-    border-bottom: 1px solid #e3ebe4;
-    margin-bottom: 8px;
-}
-.sb-logomark {
-    width: 38px; height: 38px; border-radius: 10px;
-    background: linear-gradient(135deg, #1e6b3c, #2d8a50);
-    display: flex; align-items: center; justify-content: center;
-    margin-bottom: 12px;
-    box-shadow: 0 2px 8px rgba(30,107,60,0.25);
-}
-.sb-logomark svg { width: 20px; height: 20px; fill: #ffffff; }
-.sb-title {
-    font-family: 'Fraunces', Georgia, serif; font-size: 26px; font-weight: 900;
-    color: #141f16; letter-spacing: -0.04em; line-height: 1.05; margin-bottom: 4px;
-}
-.sb-tagline { font-family: 'DM Mono', monospace; font-size: 10px; color: #8fa893; line-height: 1.5; }
+/* ── Sidebar branding ── */
+.sb-brand-wrap { padding: 28px 20px 18px; border-bottom: 1px solid #e3ebe4; margin-bottom: 6px; }
+.sb-title { font-family: 'Fraunces', Georgia, serif; font-size: 28px; font-weight: 900; color: #141f16; letter-spacing: -0.04em; line-height: 1.05; margin-bottom: 5px; }
+.sb-tagline { font-family: 'DM Mono', monospace; font-size: 10px; color: #8fa893; line-height: 1.6; }
 .nav-section { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:0.18em; text-transform:uppercase; color:#8fa893; margin-bottom:5px; margin-top:4px; padding:0 4px; }
-
-/* ── SPECIES SEARCH INPUT ── */
-.sp-search-wrap { position: relative; margin-bottom: 6px; }
-[data-testid="stTextInput"] input {
-    border: 1px solid #c8d8ca !important; border-radius: 8px !important;
-    font-size: 13px !important; padding-left: 32px !important;
-    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238fa893' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") no-repeat 10px center !important;
-}
 </style>
 """, unsafe_allow_html=True)
 
 # ── SPECIES METADATA ──────────────────────────────────────────────────────────
 SPECIES = {
-    "Pycnonotus goiavier":  {"full_name":"Pycnonotus goiavier (Scopoli, 1786)",  "common":"Yellow-vented Bulbul",      "class":"Aves",      "records":152, "color":"#1e6b3c"},
-    "Lanius cristatus":     {"full_name":"Lanius cristatus Linnaeus, 1758",       "common":"Brown Shrike",              "class":"Aves",      "records":125, "color":"#2d8a50"},
-    "Haliastur indus":      {"full_name":"Haliastur indus (Boddaert, 1783)",      "common":"Brahminy Kite",             "class":"Aves",      "records":56,  "color":"#3da866"},
-    "Spilornis holospilus": {"full_name":"Spilornis holospilus (Vigors, 1831)",   "common":"Philippine Serpent Eagle",  "class":"Aves",      "records":36,  "color":"#52c77d"},
-    "Penelopides manillae": {"full_name":"Penelopides manillae (Boddaert, 1783)", "common":"Luzon Tarictic Hornbill",   "class":"Aves",      "records":35,  "color":"#166534"},
-    "Kaloula pulchra":      {"full_name":"Kaloula pulchra Gray, 1831",            "common":"Banded Bullfrog",           "class":"Amphibia",  "records":51,  "color":"#4d7c0f"},
-    "Eutropis multifasciata":{"full_name":"Eutropis multifasciata (Kuhl, 1820)", "common":"Many-lined Sun Skink",      "class":"Squamata",  "records":81,  "color":"#65a30d"},
+    "Pycnonotus goiavier":   {"full_name":"Pycnonotus goiavier (Scopoli, 1786)",  "common":"Yellow-vented Bulbul",     "class":"Aves",     "records":152, "color":"#1e6b3c"},
+    "Lanius cristatus":      {"full_name":"Lanius cristatus Linnaeus, 1758",       "common":"Brown Shrike",             "class":"Aves",     "records":125, "color":"#2d8a50"},
+    "Haliastur indus":       {"full_name":"Haliastur indus (Boddaert, 1783)",      "common":"Brahminy Kite",            "class":"Aves",     "records":56,  "color":"#3da866"},
+    "Spilornis holospilus":  {"full_name":"Spilornis holospilus (Vigors, 1831)",   "common":"Philippine Serpent Eagle", "class":"Aves",     "records":36,  "color":"#52c77d"},
+    "Penelopides manillae":  {"full_name":"Penelopides manillae (Boddaert, 1783)", "common":"Luzon Tarictic Hornbill",  "class":"Aves",     "records":35,  "color":"#166534"},
+    "Kaloula pulchra":       {"full_name":"Kaloula pulchra Gray, 1831",            "common":"Banded Bullfrog",          "class":"Amphibia", "records":51,  "color":"#4d7c0f"},
+    "Eutropis multifasciata":{"full_name":"Eutropis multifasciata (Kuhl, 1820)",   "common":"Many-lined Sun Skink",     "class":"Squamata", "records":81,  "color":"#65a30d"},
 }
 
-# ── REAL OCCURRENCE COORDINATES (from Luzon_Terrestrial_Final.csv) ────────────
+# ── OCCURRENCES ───────────────────────────────────────────────────────────────
 OCCURRENCES = {
     "Pycnonotus goiavier": [
         (14.6521,121.0453),(14.5619,121.0962),(14.7337,120.9355),(14.5991,121.0116),(15.5703,120.6318),(14.581,121.0669),
@@ -354,30 +394,34 @@ def build_feature_matrix(species_key):
 
 # ── MODEL TRAINING ────────────────────────────────────────────────────────────
 def train_models(X, y):
-    scaler = StandardScaler()
-    Xs = scaler.fit_transform(X)
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     results = {}
 
-    # MaxEnt proxy
-    m_aucs, m_mod = [], LogisticRegression(penalty='l1', solver='saga', C=0.5, max_iter=1000, random_state=42)
-    for ti, vi in cv.split(Xs, y):
-        m_mod.fit(Xs[ti], y[ti])
-        m_aucs.append(roc_auc_score(y[vi], m_mod.predict_proba(Xs[vi])[:,1]))
+    m_aucs = []
+    m_mod = LogisticRegression(penalty='l1', solver='saga', C=0.5, max_iter=1000, random_state=42)
+    for ti, vi in cv.split(X, y):
+        _sc = StandardScaler().fit(X[ti])
+        m_mod.fit(_sc.transform(X[ti]), y[ti])
+        m_aucs.append(roc_auc_score(y[vi], m_mod.predict_proba(_sc.transform(X[vi]))[:,1]))
+    scaler = StandardScaler().fit(X)
+    Xs = scaler.transform(X)
     m_mod.fit(Xs, y)
     results['maxent'] = {'auc': float(np.mean(m_aucs)), 'model': m_mod, 'scaler': scaler}
 
-    # Random Forest
-    r_aucs, r_mod = [], RandomForestClassifier(n_estimators=200, max_depth=10, random_state=42, n_jobs=-1)
+    r_aucs = []
+    r_mod = RandomForestClassifier(n_estimators=200, max_depth=10, random_state=42, n_jobs=-1)
     for ti, vi in cv.split(X, y):
         r_mod.fit(X[ti], y[ti])
         r_aucs.append(roc_auc_score(y[vi], r_mod.predict_proba(X[vi])[:,1]))
     r_mod.fit(X, y)
     results['rf'] = {'auc': float(np.mean(r_aucs)), 'model': r_mod}
 
-    # XGBoost
-    x_aucs, x_mod = [], xgb.XGBClassifier(n_estimators=200, learning_rate=0.05, max_depth=5,
-        subsample=0.8, eval_metric='logloss', random_state=42, verbosity=0)
+    # XGBoost — no eval_metric kwarg, fully version-safe
+    x_aucs = []
+    x_mod = xgb.XGBClassifier(
+        n_estimators=200, learning_rate=0.05, max_depth=5,
+        subsample=0.8, random_state=42, verbosity=0
+    )
     for ti, vi in cv.split(X, y):
         x_mod.fit(X[ti], y[ti], verbose=False)
         x_aucs.append(roc_auc_score(y[vi], x_mod.predict_proba(X[vi])[:,1]))
@@ -388,69 +432,50 @@ def train_models(X, y):
     total = sum(aucs)
     weights = [a/total for a in aucs]
 
-    # Ensemble CV
     ens_aucs = []
     for ti, vi in cv.split(X, y):
-        mp = LogisticRegression(penalty='l1', solver='saga', C=0.5, max_iter=500, random_state=42).fit(Xs[ti], y[ti]).predict_proba(Xs[vi])[:,1]
-        rp = RandomForestClassifier(n_estimators=100, random_state=42).fit(X[ti], y[ti]).predict_proba(X[vi])[:,1]
-        xp = xgb.XGBClassifier(n_estimators=100, learning_rate=0.05, random_state=42, verbosity=0, eval_metric='logloss').fit(X[ti], y[ti], verbose=False).predict_proba(X[vi])[:,1]
+        _sc = StandardScaler().fit(X[ti])
+        mp = LogisticRegression(penalty='l1', solver='saga', C=0.5, max_iter=500, random_state=42).fit(
+            _sc.transform(X[ti]), y[ti]).predict_proba(_sc.transform(X[vi]))[:,1]
+        rp = RandomForestClassifier(n_estimators=100, random_state=42).fit(
+            X[ti], y[ti]).predict_proba(X[vi])[:,1]
+        xp = xgb.XGBClassifier(
+            n_estimators=100, learning_rate=0.05, random_state=42, verbosity=0
+        ).fit(X[ti], y[ti], verbose=False).predict_proba(X[vi])[:,1]
         ens_aucs.append(roc_auc_score(y[vi], weights[0]*mp + weights[1]*rp + weights[2]*xp))
     results['ensemble'] = {'auc': float(np.mean(ens_aucs)), 'weights': weights}
     return results, scaler
 
 # ── STABILITY MAP ─────────────────────────────────────────────────────────────
 def build_refugia_map(species_key, sc_key='ssp245', year='2050'):
-    """
-    Shows real occurrence dots + a grid of suitability-coloured circles
-    (refugium=green, gained=blue, maintained=grey, lost=red).
-    """
     coords = OCCURRENCES[species_key]
     center_lat = np.mean([c[0] for c in coords])
     center_lon = np.mean([c[1] for c in coords])
-
     m = folium.Map(location=[center_lat, center_lon], zoom_start=7,
                    tiles='CartoDB positron', prefer_canvas=True)
-
-    # ── Occurrence dots ──
     color = SPECIES[species_key]['color']
     for lat, lon in coords:
         folium.CircleMarker(
-            location=[lat, lon], radius=5,
-            color=color, fill=True, fill_color=color,
+            location=[lat, lon], radius=5, color=color, fill=True, fill_color=color,
             fill_opacity=0.75, weight=1.5,
             tooltip=f"{SPECIES[species_key]['common']} · ({lat:.3f}, {lon:.3f})",
         ).add_to(m)
 
-    # ── Dummy suitability grid (12×12 over Luzon) ──
-    rng = np.random.default_rng({'ssp245_2050':1,'ssp245_2070':2,'ssp585_2050':3,'ssp585_2070':4}
-                                 .get(f"{sc_key}_{year}", 1))
-    temp_shift = {'ssp245_2050':0.6,'ssp245_2070':1.2,'ssp585_2050':1.0,'ssp585_2070':2.2}.get(f"{sc_key}_{year}",1.0)
-
-    grid_lats = np.linspace(13.0, 18.3, 12)
-    grid_lons = np.linspace(120.1, 124.0, 12)
-
+    rng = np.random.default_rng(
+        {'ssp245_2050':1,'ssp245_2070':2,'ssp585_2050':3,'ssp585_2070':4}.get(f"{sc_key}_{year}", 1))
+    temp_shift = {'ssp245_2050':0.6,'ssp245_2070':1.2,'ssp585_2050':1.0,'ssp585_2070':2.2}.get(f"{sc_key}_{year}", 1.0)
     dot_colors = {'refugium':'#1e6b3c','gained':'#3b82f6','maintained':'#9ca3af','lost':'#dc2626'}
-
-    for gla in grid_lats:
-        for glo in grid_lons:
-            # Current suitability — higher near actual occurrences
+    for gla in np.linspace(13.0, 18.3, 12):
+        for glo in np.linspace(120.1, 124.0, 12):
             dists = [np.sqrt((gla-la)**2+(glo-lo)**2) for la,lo in coords]
-            min_dist = min(dists)
-            cur_suit = max(0.0, min(1.0, 0.85 - min_dist * 1.2 + rng.uniform(-0.1, 0.1)))
-            fut_suit = max(0.0, min(1.0, cur_suit - temp_shift * 0.08 + rng.uniform(-0.08, 0.08)))
-
+            cur_suit = max(0.0, min(1.0, 0.85 - min(dists)*1.2 + rng.uniform(-0.1, 0.1)))
+            fut_suit = max(0.0, min(1.0, cur_suit - temp_shift*0.08 + rng.uniform(-0.08, 0.08)))
             if cur_suit < 0.35 and fut_suit < 0.35:
-                continue  # skip low-suitability background cells
-
-            if cur_suit >= 0.7 and fut_suit >= 0.7:
-                cat = 'refugium'
-            elif cur_suit < 0.5 and fut_suit >= 0.5:
-                cat = 'gained'
-            elif cur_suit >= 0.5 and fut_suit >= 0.5:
-                cat = 'maintained'
-            else:
-                cat = 'lost'
-
+                continue
+            if cur_suit >= 0.7 and fut_suit >= 0.7:       cat = 'refugium'
+            elif cur_suit < 0.5 and fut_suit >= 0.5:      cat = 'gained'
+            elif cur_suit >= 0.5 and fut_suit >= 0.5:     cat = 'maintained'
+            else:                                          cat = 'lost'
             folium.CircleMarker(
                 location=[gla, glo], radius=7,
                 color=dot_colors[cat], fill=True, fill_color=dot_colors[cat],
@@ -458,36 +483,17 @@ def build_refugia_map(species_key, sc_key='ssp245', year='2050'):
                 tooltip=f"{cat.capitalize()} · suit={fut_suit:.2f}",
             ).add_to(m)
 
-    # ── Legend ──
-    legend_html = """
-    <div style="position:fixed;bottom:30px;left:30px;z-index:1000;
-         background:white;padding:14px 16px;border-radius:10px;
-         border:1px solid #e3ebe4;font-family:'DM Sans',sans-serif;
-         box-shadow:0 2px 8px rgba(0,0,0,0.1);font-size:12px;min-width:210px;">
-      <div style="font-family:'DM Mono',monospace;font-size:9px;text-transform:uppercase;
-           letter-spacing:0.12em;color:#8fa893;margin-bottom:10px;">Stability</div>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-        <div style="width:10px;height:10px;border-radius:50%;background:#1e6b3c;flex-shrink:0;"></div>
-        High-Confidence Refugia (≥0.7)
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-        <div style="width:10px;height:10px;border-radius:50%;background:#3b82f6;flex-shrink:0;"></div>
-        Habitat Gained
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-        <div style="width:10px;height:10px;border-radius:50%;background:#9ca3af;flex-shrink:0;"></div>
-        Habitat Maintained
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-        <div style="width:10px;height:10px;border-radius:50%;background:#dc2626;flex-shrink:0;"></div>
-        Habitat Lost
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid #e3ebe4;">
-        <div style="width:10px;height:10px;border-radius:50%;background:#1e6b3c;opacity:0.8;flex-shrink:0;"></div>
-        Occurrence Record
-      </div>
-    </div>"""
-    m.get_root().html.add_child(folium.Element(legend_html))
+    m.get_root().html.add_child(folium.Element("""
+    <div style="position:fixed;bottom:30px;left:30px;z-index:1000;background:white;
+         padding:14px 16px;border-radius:10px;border:1px solid #e3ebe4;
+         font-family:'DM Sans',sans-serif;box-shadow:0 2px 8px rgba(0,0,0,0.1);font-size:12px;min-width:210px;">
+      <div style="font-family:'DM Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.12em;color:#8fa893;margin-bottom:10px;">Stability</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><div style="width:10px;height:10px;border-radius:50%;background:#1e6b3c;flex-shrink:0;"></div>High-Confidence Refugia (≥0.7)</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><div style="width:10px;height:10px;border-radius:50%;background:#3b82f6;flex-shrink:0;"></div>Habitat Gained</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><div style="width:10px;height:10px;border-radius:50%;background:#9ca3af;flex-shrink:0;"></div>Habitat Maintained</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><div style="width:10px;height:10px;border-radius:50%;background:#dc2626;flex-shrink:0;"></div>Habitat Lost</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid #e3ebe4;"><div style="width:10px;height:10px;border-radius:50%;background:#1e6b3c;opacity:0.8;flex-shrink:0;"></div>Occurrence Record</div>
+    </div>"""))
     return m
 
 # ── STABILITY NUMBERS ─────────────────────────────────────────────────────────
@@ -511,77 +517,45 @@ for k, v in [('page','home'),('selected_species','Pycnonotus goiavier'),
 
 # ── SIDEBAR ───────────────────────────────────────────────────────────────────
 with st.sidebar:
-    # Branding block at top
     st.markdown("""
     <div class="sb-brand-wrap">
-      <div class="sb-logomark">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" opacity="0.3"/>
-          <path d="M17 8C15.9 6.76 14.05 6 12 6S8.1 6.76 7 8c-.65.77-1 1.84-1 3 0 3.31 2.69 6 6 6s6-2.69 6-6c0-1.16-.35-2.23-1-3z"/>
-        </svg>
-      </div>
       <div class="sb-title">Resilio<span style="color:#1e6b3c">-Map</span></div>
       <div class="sb-tagline">Climate Refugia<br>Luzon · Philippines</div>
     </div>""", unsafe_allow_html=True)
-
-    st.markdown('<div class="nav-section" style="padding: 0 20px; margin-top:12px;">Pipeline</div>', unsafe_allow_html=True)
+    st.markdown('<div class="nav-section" style="padding:0 20px;margin-top:12px;">Pipeline</div>', unsafe_allow_html=True)
     st.markdown("<div style='padding:0 12px;'>", unsafe_allow_html=True)
-
-    for pid, label in [('home','Overview'),('m1','Data Ingestion'),
-                        ('m2','Ensemble Engine'),('m3','Refugia Dashboard')]:
-        is_active = st.session_state.page == pid
-        if st.button(label, key=f"nav_{pid}",
-                     use_container_width=True,
-                     type="primary" if is_active else "secondary"):
-            st.session_state.page = pid
-            st.rerun()
-
+    for pid, label in [('home','Overview'),('m1','Data Ingestion'),('m2','Ensemble Engine'),('m3','Refugia Dashboard')]:
+        if st.button(label, key=f"nav_{pid}", use_container_width=True,
+                     type="primary" if st.session_state.page == pid else "secondary"):
+            st.session_state.page = pid; st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
-
-    # Stats card
     st.markdown("""
     <div style="margin:16px 12px 0;background:linear-gradient(135deg,#eaf4ed,#d4eada);
          border:1px solid #a8ccb2;border-radius:12px;padding:16px 18px;">
-      <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.16em;
-           text-transform:uppercase;color:#2d8a50;margin-bottom:10px;">Dataset</div>
+      <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#2d8a50;margin-bottom:10px;">Dataset</div>
       <div style="display:flex;justify-content:space-between;align-items:flex-end;">
-        <div>
-          <div style="font-family:'Fraunces',serif;font-size:36px;font-weight:900;
-               color:#1e6b3c;line-height:1;letter-spacing:-0.03em;">7</div>
-          <div style="font-size:11px;color:#4a5e4c;margin-top:2px;">Species</div>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-family:'Fraunces',serif;font-size:24px;font-weight:900;
-               color:#2d8a50;line-height:1;letter-spacing:-0.02em;">536</div>
-          <div style="font-size:11px;color:#4a5e4c;margin-top:2px;">Records</div>
-        </div>
+        <div><div style="font-family:'Fraunces',serif;font-size:36px;font-weight:900;color:#1e6b3c;line-height:1;letter-spacing:-0.03em;">7</div><div style="font-size:11px;color:#4a5e4c;margin-top:2px;">Species</div></div>
+        <div style="text-align:right;"><div style="font-family:'Fraunces',serif;font-size:24px;font-weight:900;color:#2d8a50;line-height:1;letter-spacing:-0.02em;">536</div><div style="font-size:11px;color:#4a5e4c;margin-top:2px;">Records</div></div>
       </div>
       <div style="margin-top:12px;padding-top:10px;border-top:1px solid #a8ccb2;">
-        <div style="font-size:11px;color:#4a5e4c;line-height:1.6;">
-          Luzon · 3 classes<br>
-          <span style="color:#1e6b3c;font-weight:600;">2 Luzon endemics</span>
-        </div>
+        <div style="font-size:11px;color:#4a5e4c;line-height:1.6;">Luzon · 3 classes<br><span style="color:#1e6b3c;font-weight:600;">2 Luzon endemics</span></div>
       </div>
     </div>""", unsafe_allow_html=True)
 
-# ── STEP BAR ──────────────────────────────────────────────────────────────────
+# ── HELPERS ───────────────────────────────────────────────────────────────────
 def step_bar(current_idx):
     labels = ['Overview','Data Ingestion','Ensemble Engine','Refugia Dashboard']
     html = '<div class="step-bar">'
     for i, name in enumerate(labels):
-        cls  = 'step-item active' if i == current_idx else ('step-item done' if i < current_idx else 'step-item')
-        lbl  = 'Current' if i == current_idx else ('Done' if i < current_idx else ('Next' if i == current_idx+1 else 'Upcoming'))
+        cls = 'step-item active' if i == current_idx else ('step-item done' if i < current_idx else 'step-item')
+        lbl = 'Current' if i == current_idx else ('Done' if i < current_idx else ('Next' if i == current_idx+1 else 'Upcoming'))
         html += f'<div class="{cls}"><div class="s-lbl">{lbl}</div><div class="s-name">{name}</div></div>'
-    html += '</div>'
-    st.markdown(html, unsafe_allow_html=True)
+    st.markdown(html + '</div>', unsafe_allow_html=True)
 
-# ── STAT CARD HELPER ──────────────────────────────────────────────────────────
 def stat_card(val, label, cls=''):
-    st.markdown(f"""
-    <div style="background:#fff;border:1px solid #e3ebe4;border-radius:10px;
+    st.markdown(f"""<div style="background:#fff;border:1px solid #e3ebe4;border-radius:10px;
          padding:15px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
-      <div class="stat-val {cls}">{val}</div>
-      <div class="stat-label">{label}</div>
+      <div class="stat-val {cls}">{val}</div><div class="stat-label">{label}</div>
     </div>""", unsafe_allow_html=True)
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -597,12 +571,11 @@ if st.session_state.page == 'home':
         if st.button("▶ Start Pipeline", type="primary", use_container_width=True):
             st.session_state.page = 'm1'; st.rerun()
     with cb:
-        if st.button("View Dashboard →", use_container_width=False):
+        if st.button("View Dashboard →"):
             st.session_state.page = 'm3'; st.rerun()
 
     st.markdown("<hr style='border:none;border-top:1px solid #e3ebe4;margin:20px 0'>", unsafe_allow_html=True)
 
-    # Pipeline steps
     pb = st.columns(4)
     for col, (icon, name, status, done, active) in zip(pb, [
         ("📂","Data Ingestion","✓ complete",True,False),
@@ -614,8 +587,7 @@ if st.session_state.page == 'home':
         bc = "#1e6b3c" if active else ("#a8ccb2" if done else "#e3ebe4")
         nc = "#1e6b3c" if active or done else "#8fa893"
         sc = "#2d8a50" if done else ("#e67e22" if active else "#8fa893")
-        col.markdown(f"""
-        <div style="background:{bg};border:1px solid {bc};border-bottom:3px solid {bc};
+        col.markdown(f"""<div style="background:{bg};border:1px solid {bc};border-bottom:3px solid {bc};
              border-radius:10px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
           <div style="font-size:20px;margin-bottom:8px;">{icon}</div>
           <div style="font-size:12px;font-weight:700;color:{nc};margin-bottom:2px;">{name}</div>
@@ -633,12 +605,10 @@ if st.session_state.page == 'home':
     ct, cl = st.columns([3,2])
     with ct:
         st.markdown('<div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:#8fa893;margin-bottom:10px;">Target Species</div>', unsafe_allow_html=True)
-        st.dataframe(pd.DataFrame([{"Species":v["full_name"],"Common Name":v["common"],"Class":v["class"],"Records":v["records"]} for v in SPECIES.values()]),
-                     use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame([{"Species":v["full_name"],"Common Name":v["common"],"Class":v["class"],"Records":v["records"]} for v in SPECIES.values()]), use_container_width=True, hide_index=True)
     with cl:
         st.markdown('<div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:#8fa893;margin-bottom:10px;">System Log</div>', unsafe_allow_html=True)
-        st.markdown("""
-        <div style="background:#f7f9f7;border:1px solid #e3ebe4;border-radius:8px;padding:12px;
+        st.markdown("""<div style="background:#f7f9f7;border:1px solid #e3ebe4;border-radius:8px;padding:12px;
              font-family:'DM Mono',monospace;font-size:11px;line-height:1.9;">
           <span style="color:#8fa893">09:14:02</span><span style="color:#1e6b3c"> [DONE] GBIF data loaded — 536 records</span><br>
           <span style="color:#8fa893">09:14:05</span><span style="color:#1e6b3c"> [DONE] Spatial thinning — 7 spp. validated</span><br>
@@ -679,7 +649,6 @@ elif st.session_state.page == 'm1':
           <div style="font-family:'DM Mono',monospace;font-size:11px;color:#8fa893;">BIO1–BIO19 · .tif · 1km² resolution</div>
           <div style="font-size:11px;color:#1e6b3c;font-weight:600;margin-top:8px;">✓ 19 / 19 layers loaded</div>
         </div>""", unsafe_allow_html=True)
-
     with cr:
         st.markdown("**Cleaning Parameters**")
         st.checkbox("Filter to Luzon Bounding Box", value=True)
@@ -694,17 +663,16 @@ elif st.session_state.page == 'm1':
 
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown('<div style="font-family:\'DM Mono\',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.15em;color:#8fa893;margin-bottom:6px;">Cleaned Data Preview</div>', unsafe_allow_html=True)
-
     rows = []
     for sp_key in list(OCCURRENCES.keys())[:3]:
         for lat, lon in OCCURRENCES[sp_key][:2]:
             bio = generate_bioclim(lat, lon)
             rows.append({"Species":sp_key,"Longitude":f"{lon:.4f}","Latitude":f"{lat:.4f}",
                          "BIO1 (°C)":f"{bio[0]}","BIO12 (mm)":f"{bio[11]}","Label":"PRESENCE"})
-    rows += [{"Species":"[background]","Longitude":"121.011","Latitude":"15.500",
-              "BIO1 (°C)":"26.2","BIO12 (mm)":"2,104","Label":"PSEUDO-ABS"},
-             {"Species":"[background]","Longitude":"122.430","Latitude":"16.200",
-              "BIO1 (°C)":"25.8","BIO12 (mm)":"2,450","Label":"PSEUDO-ABS"}]
+    rows += [
+        {"Species":"[background]","Longitude":"121.011","Latitude":"15.500","BIO1 (°C)":"26.2","BIO12 (mm)":"2,104","Label":"PSEUDO-ABS"},
+        {"Species":"[background]","Longitude":"122.430","Latitude":"16.200","BIO1 (°C)":"25.8","BIO12 (mm)":"2,450","Label":"PSEUDO-ABS"},
+    ]
     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
     st.markdown('<div class="callout-amber">📋 Pseudo-absences matched 1:1 with presence records per species. VIF analysis removes variables with VIF > 10 before training.</div>', unsafe_allow_html=True)
 
@@ -717,7 +685,7 @@ elif st.session_state.page == 'm1':
                 color=SPECIES[sp_key]['color'], fill=True,
                 fill_color=SPECIES[sp_key]['color'], fill_opacity=0.7, weight=1,
                 tooltip=SPECIES[sp_key]['common']).add_to(m_all)
-    st_folium(m_all, width=None, height=380, returned_objects=[])
+    st_folium(m_all, height=380, returned_objects=[])
 
     st.markdown("<br>", unsafe_allow_html=True)
     cb, _, cn = st.columns([1,4,1])
@@ -737,16 +705,14 @@ elif st.session_state.page == 'm2':
     st.markdown('<div class="page-sub">Train MaxEnt, Random Forest, and XGBoost. Monitor AUC-ROC across 5-fold spatial cross-validation before projecting to future climate layers.</div>', unsafe_allow_html=True)
     step_bar(2)
 
-    # Species search filter
     sp_search = st.text_input("🔍  Search species", placeholder="Type common or scientific name…", key="m2_search")
     sp_filtered = {k: v for k, v in SPECIES.items()
                    if not sp_search or sp_search.lower() in k.lower() or sp_search.lower() in v['common'].lower()}
     if not sp_filtered:
         sp_filtered = SPECIES
         st.caption("No match — showing all species")
-    sp_label = st.selectbox("Select Species to Train",
-        list(sp_filtered.keys()), format_func=lambda k: f"{SPECIES[k]['common']} — {k}",
-        key="train_sp")
+    sp_label = st.selectbox("Select Species to Train", list(sp_filtered.keys()),
+        format_func=lambda k: f"{SPECIES.get(k,{}).get('common',k)} — {k}", key="train_sp")
 
     if st.button("⚙ Train Ensemble Models", type="primary"):
         st.session_state.selected_species = sp_label
@@ -782,11 +748,9 @@ elif st.session_state.page == 'm2':
             sbg = "#eaf4ed" if passed else "#fef3e2"
             sbc = "#d4eada" if passed else "#e8d4b0"
             sc2 = "#1e6b3c" if passed else "#7a4f1a"
-            col.markdown(f"""
-            <div style="background:#fff;border:1px solid #e3ebe4;border-radius:10px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+            col.markdown(f"""<div style="background:#fff;border:1px solid #e3ebe4;border-radius:10px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
               <div style="font-size:22px;margin-bottom:10px;">{icon}</div>
-              <div class="algo-name">{name}</div>
-              <div class="algo-role">{role}</div>
+              <div class="algo-name">{name}</div><div class="algo-role">{role}</div>
               <div style="margin-bottom:8px;">
                 <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
                   <span style="font-family:'DM Mono',monospace;font-size:11px;color:#4a5e4c;">AUC-ROC</span>
@@ -800,22 +764,17 @@ elif st.session_state.page == 'm2':
                 <span style="font-family:'DM Mono',monospace;font-size:10px;color:#8fa893;">Weight</span>
                 <span style="font-family:'DM Mono',monospace;font-size:11px;color:#1e6b3c;font-weight:500;">{w:.1%}</span>
               </div>
-              <div style="padding:8px 11px;background:{sbg};border:1px solid {sbc};border-radius:7px;
-                   display:flex;justify-content:space-between;">
+              <div style="padding:8px 11px;background:{sbg};border:1px solid {sbc};border-radius:7px;display:flex;justify-content:space-between;">
                 <span style="font-family:'DM Mono',monospace;font-size:10px;color:#8fa893;">AUC ≥ 0.85</span>
-                <span style="font-family:'DM Mono',monospace;font-size:10px;font-weight:600;color:{sc2};">
-                  {'✓ Passed' if passed else '⚠ Below threshold'}</span>
+                <span style="font-family:'DM Mono',monospace;font-size:10px;font-weight:600;color:{sc2};">{'✓ Passed' if passed else '⚠ Below threshold'}</span>
               </div>
             </div>""", unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
         e1, e2 = st.columns([3,2])
-
         with e1:
-            st.markdown(f"""
-            <div style="background:#fff;border:1px solid #e3ebe4;border-radius:10px;padding:20px;">
-              <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:#8fa893;margin-bottom:14px;">
-                Ensemble AUC-ROC — 5-Fold Cross-Validation</div>
+            st.markdown(f"""<div style="background:#fff;border:1px solid #e3ebe4;border-radius:10px;padding:20px;">
+              <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:#8fa893;margin-bottom:14px;">Ensemble AUC-ROC — 5-Fold Cross-Validation</div>
               <div style="text-align:center;padding:10px 0 6px;">
                 <div style="font-family:'Fraunces',serif;font-size:60px;font-weight:900;color:#1e6b3c;letter-spacing:-0.04em;line-height:1;">{ens_auc:.3f}</div>
                 <div style="font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.15em;color:#8fa893;margin-top:4px;">Weighted Ensemble Score</div>
@@ -825,28 +784,22 @@ elif st.session_state.page == 'm2':
                 <span style="font-family:'DM Mono',monospace;font-size:11px;font-weight:600;color:#1e6b3c;">{'✓ Validated' if ens_auc >= 0.85 else '⚠ Retrain'}</span>
               </div>
             </div>""", unsafe_allow_html=True)
-
             fig = go.Figure()
-            labels = ['MaxEnt','Random Forest','XGBoost','Ensemble']
-            vals   = [aucs['MaxEnt'],aucs['Random Forest'],aucs['XGBoost'],ens_auc]
-            colors = ['#a8ccb2','#a8ccb2','#a8ccb2','#1e6b3c']
-            fig.add_trace(go.Bar(x=labels, y=vals, marker_color=colors,
+            vals = [aucs['MaxEnt'],aucs['Random Forest'],aucs['XGBoost'],ens_auc]
+            fig.add_trace(go.Bar(x=['MaxEnt','Random Forest','XGBoost','Ensemble'], y=vals,
+                                 marker_color=['#a8ccb2','#a8ccb2','#a8ccb2','#1e6b3c'],
                                  text=[f"{v:.3f}" for v in vals], textposition='outside'))
-            fig.add_hline(y=0.85, line_dash="dash", line_color="#c8922a",
-                          annotation_text="threshold 0.85")
-            fig.update_layout(yaxis=dict(range=[0.7,1.0],title="AUC-ROC"),
-                               height=240, margin=dict(l=20,r=20,t=20,b=20),
-                               plot_bgcolor='#f7f9f7', paper_bgcolor='#fff',
-                               font=dict(family='DM Sans'))
+            fig.add_hline(y=0.85, line_dash="dash", line_color="#c8922a", annotation_text="threshold 0.85")
+            fig.update_layout(yaxis=dict(range=[0.7,1.0],title="AUC-ROC"), height=240,
+                              margin=dict(l=20,r=20,t=20,b=20), plot_bgcolor='#f7f9f7',
+                              paper_bgcolor='#fff', font=dict(family='DM Sans'))
             st.plotly_chart(fig, use_container_width=True)
 
         with e2:
             bh = [int(w/sum(weights)*45) for w in weights]
-            st.markdown(f"""
-            <div style="background:#fff;border:1px solid #e3ebe4;border-radius:10px;padding:20px;">
+            st.markdown(f"""<div style="background:#fff;border:1px solid #e3ebe4;border-radius:10px;padding:20px;">
               <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:#8fa893;margin-bottom:14px;">Weighted Voting</div>
-              <div style="display:flex;align-items:flex-end;gap:8px;padding:14px 10px 8px;
-                   background:#f7f9f7;border:1px solid #e3ebe4;border-radius:8px;margin-bottom:12px;">
+              <div style="display:flex;align-items:flex-end;gap:8px;padding:14px 10px 8px;background:#f7f9f7;border:1px solid #e3ebe4;border-radius:8px;margin-bottom:12px;">
                 {''.join([f'<div style="flex:1;text-align:center;"><div style="height:46px;display:flex;align-items:flex-end;justify-content:center;margin-bottom:5px;"><div style="width:26px;height:{bh[i]}px;background:{"#1e6b3c" if bh[i]==max(bh) else "#d4eada"};border-radius:4px 4px 0 0;"></div></div><div style="font-family:\'DM Mono\',monospace;font-size:11px;font-weight:500;color:#1e6b3c;">{weights[i]:.1%}</div><div style="font-family:\'DM Mono\',monospace;font-size:9px;color:#8fa893;text-transform:uppercase;">{n}</div></div>' for i,n in enumerate(['MaxEnt','RF','XGB'])])}
                 <div style="font-size:18px;color:#8fa893;padding-bottom:14px;">→</div>
                 <div style="flex:1.4;text-align:center;padding-bottom:4px;">
@@ -877,7 +830,6 @@ elif st.session_state.page == 'm3':
 
     c1, c2, c3, c4 = st.columns([2,1.2,1.2,1.2])
     with c1:
-        # Species search + select
         dash_search = st.text_input("🔍  Search species", placeholder="Type common or scientific name…", key="m3_search")
         dash_filtered = {k: v for k, v in SPECIES.items()
                          if not dash_search or dash_search.lower() in k.lower() or dash_search.lower() in v['common'].lower()}
@@ -886,7 +838,7 @@ elif st.session_state.page == 'm3':
             st.caption("No match — showing all species")
         sp_options = ['— Select a species —'] + list(dash_filtered.keys())
         sp_dash_raw = st.selectbox("Species", sp_options,
-            format_func=lambda k: k if k.startswith('—') else f"{SPECIES[k]['common']} — {k}",
+            format_func=lambda k: k if k.startswith('—') else f"{SPECIES.get(k,{}).get('common',k)} — {k}",
             key="dash_sp")
     with c2:
         scenario = st.radio("Scenario", ["SSP2-4.5","SSP5-8.5"], horizontal=True)
@@ -898,10 +850,8 @@ elif st.session_state.page == 'm3':
         run_dash = st.button("🗺 Generate Map", type="primary", use_container_width=True,
                              disabled=sp_dash_raw.startswith('—'))
 
-    # Reset map when species cleared
     if sp_dash_raw.startswith('—'):
         st.session_state.dash_generated = False
-
     if run_dash and not sp_dash_raw.startswith('—'):
         st.session_state.dash_generated = True
         st.session_state.dash_sp_key = sp_dash_raw
@@ -921,15 +871,12 @@ elif st.session_state.page == 'm3':
 
         st.markdown("<br>", unsafe_allow_html=True)
         map_col, stab_col = st.columns([3,1.5])
-
         with map_col:
             m = build_refugia_map(sp_key, sc_key, year)
-            st_folium(m, width=None, height=430, returned_objects=[])
-
+            st_folium(m, height=430, returned_objects=[])
         with stab_col:
             st.markdown("**Stability Metrics**")
-            st.markdown(f"""
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+            st.markdown(f"""<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
               <div class="stab-r"><div class="stab-val">{refugia:,}</div><div class="stab-lbl">Refugia km²</div></div>
               <div class="stab-g"><div class="stab-val">{gained:,}</div><div class="stab-lbl">Gained km²</div></div>
               <div class="stab-m"><div class="stab-val">{maintained:,}</div><div class="stab-lbl">Maintained km²</div></div>
@@ -937,28 +884,23 @@ elif st.session_state.page == 'm3':
             </div>""", unsafe_allow_html=True)
 
             st.markdown("**NIPAS Overlap**")
-            np.random.seed(hash(sp_key) % (2**31))
-            nipas_pct = np.random.uniform(0.55, 0.70)
+            rng_nipas = np.random.default_rng(hash(sp_key) % (2**31))
+            nipas_pct = rng_nipas.uniform(0.55, 0.70)
             st.markdown(f"""
-            <div style="display:flex;justify-content:space-between;padding:9px 12px;
-                 background:#f7f9f7;border:1px solid #e3ebe4;border-radius:7px;margin-bottom:6px;">
+            <div style="display:flex;justify-content:space-between;padding:9px 12px;background:#f7f9f7;border:1px solid #e3ebe4;border-radius:7px;margin-bottom:6px;">
               <span style="font-size:12px;color:#4a5e4c;">Inside NIPAS PAs</span>
               <span style="font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:#1e6b3c;">{nipas_pct:.0%}</span>
             </div>
-            <div style="display:flex;justify-content:space-between;padding:9px 12px;
-                 background:#f7f9f7;border:1px solid #e3ebe4;border-radius:7px;margin-bottom:6px;">
+            <div style="display:flex;justify-content:space-between;padding:9px 12px;background:#f7f9f7;border:1px solid #e3ebe4;border-radius:7px;margin-bottom:6px;">
               <span style="font-size:12px;color:#4a5e4c;">Outside NIPAS</span>
               <span style="font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:#7a4f1a;">{1-nipas_pct:.0%}</span>
             </div>""", unsafe_allow_html=True)
             st.markdown(f'<div class="callout-green">{1-nipas_pct:.0%} of refugia fall outside current NIPAS boundaries — candidate sites for PA expansion.</div>', unsafe_allow_html=True)
-            st.markdown(f"""
-            <div style="display:flex;justify-content:space-between;padding:9px 12px;
-                 background:#eaf4ed;border:1px solid #d4eada;border-radius:7px;margin-top:10px;">
+            st.markdown(f"""<div style="display:flex;justify-content:space-between;padding:9px 12px;background:#eaf4ed;border:1px solid #d4eada;border-radius:7px;margin-top:10px;">
               <span style="font-family:'DM Mono',monospace;font-size:10px;color:#8fa893;">Ensemble AUC-ROC</span>
               <span style="font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:#1e6b3c;">{ens_auc:.3f}</span>
             </div>""", unsafe_allow_html=True)
 
-        # SSP comparison chart
         st.markdown("<br>**SSP2-4.5 vs SSP5-8.5 — Refugia &amp; Habitat Loss**")
         sc_labels = ['SSP2-4.5 · 2050','SSP2-4.5 · 2070','SSP5-8.5 · 2050','SSP5-8.5 · 2070']
         r_vals, l_vals = [], []
@@ -973,38 +915,24 @@ elif st.session_state.page == 'm3':
                            legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1))
         st.plotly_chart(fig2, use_container_width=True)
 
-        # ── EXPORT ──
         st.markdown("<br>", unsafe_allow_html=True)
         ex1, ex2, ex3 = st.columns([1,1,4])
-
         with ex1:
-            # Build CSV in memory
             rows_exp = []
             for la, lo in OCCURRENCES[sp_key]:
                 bio = generate_bioclim(la, lo)
                 rows_exp.append({
-                    "species": SPECIES[sp_key]["full_name"],
-                    "common_name": SPECIES[sp_key]["common"],
-                    "latitude": la, "longitude": lo,
-                    "scenario": scenario, "year": year,
-                    "refugia_km2": refugia, "gained_km2": gained,
-                    "maintained_km2": maintained, "lost_km2": lost,
-                    "ensemble_auc": round(ens_auc, 4),
-                    "BIO1_temp": bio[0], "BIO12_precip": bio[11],
+                    "species": SPECIES[sp_key]["full_name"], "common_name": SPECIES[sp_key]["common"],
+                    "latitude": la, "longitude": lo, "scenario": scenario, "year": year,
+                    "refugia_km2": refugia, "gained_km2": gained, "maintained_km2": maintained, "lost_km2": lost,
+                    "ensemble_auc": round(ens_auc, 4), "BIO1_temp": bio[0], "BIO12_precip": bio[11],
                 })
             csv_buf = io.StringIO()
             pd.DataFrame(rows_exp).to_csv(csv_buf, index=False)
-            st.download_button(
-                label="↓ Export CSV",
-                data=csv_buf.getvalue(),
+            st.download_button(label="↓ Export CSV", data=csv_buf.getvalue(),
                 file_name=f"resilio_map_{sp_key.replace(' ','_')}_{sc_key}_{year}.csv",
-                mime="text/csv",
-                type="primary",
-                use_container_width=True,
-            )
-
+                mime="text/csv", type="primary", use_container_width=True)
         with ex2:
-            # Build summary text report
             report = f"""RESILIO-MAP — STABILITY REPORT
 ==============================
 Generated: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M')}
@@ -1035,13 +963,9 @@ based on CMIP6 {scenario} bioclimatic data.
 Refugia = grid cells with suitability >= 0.7
 across both current and future conditions.
 """
-            st.download_button(
-                label="↓ Export Report",
-                data=report,
+            st.download_button(label="↓ Export Report", data=report,
                 file_name=f"resilio_map_report_{sp_key.replace(' ','_')}_{sc_key}_{year}.txt",
-                mime="text/plain",
-                use_container_width=True,
-            )
+                mime="text/plain", use_container_width=True)
 
     cb2, _, _ = st.columns([1,4,1])
     with cb2:
