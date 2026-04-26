@@ -17,7 +17,7 @@ tas kung di nakainstall streamlit type -> pip install -r requirements.txt (iinst
 
 after mag install
 
-type sa same command line -> streamlit run app.py or python -m streamlit runn app.py tas bubukas na yan
+type sa same command line -> streamlit run app.py or python -m streamlit run app.py tas bubukas na yan
 
 tapos ctrl + c sa terminal para i close</br> </br>
 
